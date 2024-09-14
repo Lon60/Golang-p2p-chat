@@ -14,7 +14,7 @@ func GetChatHistory(identifier string) *[]string {
 	defer mutex.Unlock()
 
 	if _, exists := Chats[identifier]; !exists {
-		chatHistory := []string{}
+		var chatHistory []string
 		Chats[identifier] = &chatHistory
 	}
 	return Chats[identifier]
@@ -25,7 +25,7 @@ func AppendToChatHistory(identifier, message string) {
 	defer mutex.Unlock()
 
 	if _, exists := Chats[identifier]; !exists {
-		chatHistory := []string{}
+		var chatHistory []string
 		Chats[identifier] = &chatHistory
 	}
 	*Chats[identifier] = append(*Chats[identifier], message)

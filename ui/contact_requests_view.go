@@ -50,13 +50,13 @@ func acceptContactRequest(request models.ContactRequest, window fyne.Window) {
 
 	// Füge Kontakt hinzu und entferne Anfrage
 	contacts.AddContact(identifier, contact)
-	contact_requests.RemoveReceivedRequestByIdentifier(identifier)
 
 	// Benachrichtige den anfragenden Kontakt
 	err := client.SendContactAccepted(request)
 	if err != nil {
 		dialog.ShowError(err, window)
 	} else {
+		contact_requests.RemoveReceivedRequestByIdentifier(identifier)
 		dialog.ShowInformation("Kontakt akzeptiert", "Der Kontakt wurde akzeptiert.", window)
 	}
 }
