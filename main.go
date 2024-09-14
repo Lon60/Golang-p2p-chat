@@ -1,6 +1,12 @@
 package main
 
-func main() {
-	println("Hello World")
+import (
+	"Golang-p2p-chat/server"
+	"Golang-p2p-chat/ui"
+)
 
+func main() {
+	go server.StartServer()
+
+	ui.StartUI()
 }
