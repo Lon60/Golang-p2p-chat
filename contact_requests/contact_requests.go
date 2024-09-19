@@ -4,7 +4,6 @@ import (
 	"Golang-p2p-chat/models"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -36,12 +35,12 @@ func RemoveReceivedRequestByIdentifier(identifier string) {
 func SaveRequestsToFile() {
 	file, err := json.MarshalIndent(receivedRequests, "", "  ")
 	if err != nil {
-		fmt.Println("Fehler beim Speichern der Kontaktanfragen:", err)
+		fmt.Println("Error saving contact requests:", err)
 		return
 	}
-	err = ioutil.WriteFile(requestsFile, file, 0644)
+	err = os.WriteFile(requestsFile, file, 0644)
 	if err != nil {
-		fmt.Println("Fehler beim Schreiben der Kontaktanfragen-Datei:", err)
+		fmt.Println("Error writing contact requests file:", err)
 	}
 }
 
@@ -49,13 +48,13 @@ func LoadRequestsFromFile() {
 	if _, err := os.Stat(requestsFile); os.IsNotExist(err) {
 		return
 	}
-	file, err := ioutil.ReadFile(requestsFile)
+	file, err := os.ReadFile(requestsFile)
 	if err != nil {
-		fmt.Println("Fehler beim Lesen der Kontaktanfragen-Datei:", err)
+		fmt.Println("Error reading contact requests file:", err)
 		return
 	}
 	err = json.Unmarshal(file, &receivedRequests)
 	if err != nil {
-		fmt.Println("Fehler beim Laden der Kontaktanfragen:", err)
+		fmt.Println("Error loading contact requests:", err)
 	}
 }

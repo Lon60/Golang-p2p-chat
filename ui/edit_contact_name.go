@@ -13,28 +13,27 @@ import (
 func editContactNameUI(window fyne.Window) {
 	contactsList := contacts.GetContacts()
 	if len(contactsList) == 0 {
-		dialog.ShowInformation("Keine Kontakte", "Es sind keine Kontakte verfügbar.", window)
+		dialog.ShowInformation("No Contacts", "No contacts are available.", window)
 		return
 	}
 
 	var items []fyne.CanvasObject
 	for identifier, contact := range contactsList {
 		identifierCopy := identifier
-		item := widget.NewButton(fmt.Sprintf("%s (aktuell: %s)", identifier, contact.Name), func() {
-			// Eingabefeld für neuen Namen
+		item := widget.NewButton(fmt.Sprintf("%s (current: %s)", identifier, contact.Name), func() {
 			entry := widget.NewEntry()
-			entry.SetPlaceHolder("Neuer Name")
+			entry.SetPlaceHolder("New Name")
 
-			form := dialog.NewForm("Kontaktnamen bearbeiten", "Speichern", "Abbrechen", []*widget.FormItem{
-				widget.NewFormItem("Neuer Name", entry),
+			form := dialog.NewForm("Edit Contact Name", "Save", "Cancel", []*widget.FormItem{
+				widget.NewFormItem("New Name", entry),
 			}, func(b bool) {
 				if b {
 					newName := strings.TrimSpace(entry.Text)
 					if newName != "" {
 						contacts.UpdateContactName(identifierCopy, newName)
-						dialog.ShowInformation("Erfolg", "Kontaktnamen aktualisiert.", window)
+						dialog.ShowInformation("Success", "Contact name updated.", window)
 					} else {
-						dialog.ShowInformation("Fehler", "Name darf nicht leer sein.", window)
+						dialog.ShowInformation("Error", "Name cannot be empty.", window)
 					}
 				}
 			}, window)
@@ -43,8 +42,7 @@ func editContactNameUI(window fyne.Window) {
 		items = append(items, item)
 	}
 
-	// "Zurück"-Button hinzufügen
-	backButton := widget.NewButton("Zurück", func() {
+	backButton := widget.NewButton("Back", func() {
 		showMainMenu(window)
 	})
 

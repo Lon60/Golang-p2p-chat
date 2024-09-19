@@ -16,7 +16,7 @@ import (
 func viewChatsUI(window fyne.Window) {
 	contactsList := contacts.GetContacts()
 	if len(contactsList) == 0 {
-		dialog.ShowInformation("Keine Chats", "Es sind keine Chats verfügbar.", window)
+		dialog.ShowInformation("No Chats", "No chats are available.", window)
 		return
 	}
 
@@ -29,7 +29,7 @@ func viewChatsUI(window fyne.Window) {
 		items = append(items, item)
 	}
 
-	backButton := widget.NewButton("Zurück", func() {
+	backButton := widget.NewButton("Back", func() {
 		showMainMenu(window)
 	})
 
@@ -44,9 +44,9 @@ func startChatUI(window fyne.Window, contact models.Contact) {
 
 	messages := widget.NewLabel(strings.Join(*chatHistory, "\n"))
 	input := widget.NewEntry()
-	input.SetPlaceHolder("Nachricht eingeben")
+	input.SetPlaceHolder("Enter message")
 
-	sendButton := widget.NewButton("Senden", func() {
+	sendButton := widget.NewButton("Send", func() {
 		text := strings.TrimSpace(input.Text)
 		if text != "" {
 			err := client.SendChatMessage(contact, text)
@@ -54,13 +54,13 @@ func startChatUI(window fyne.Window, contact models.Contact) {
 				dialog.ShowError(err, window)
 				return
 			}
-			chat_data.AppendToChatHistory(contact.Identifier(), "Sie: "+text)
+			chat_data.AppendToChatHistory(contact.Identifier(), "You: "+text)
 			messages.SetText(strings.Join(*chatHistory, "\n"))
 			input.SetText("")
 		}
 	})
 
-	backButton := widget.NewButton("Zurück", func() {
+	backButton := widget.NewButton("Back", func() {
 		viewChatsUI(window)
 	})
 

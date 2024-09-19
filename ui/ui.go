@@ -19,22 +19,22 @@ func StartUI() {
 }
 
 func showMainMenu(window fyne.Window) {
-	label := widget.NewLabel("Willkommen zum Peer-to-Peer Chat")
+	label := widget.NewLabel("Welcome to Peer-to-Peer Chat")
 	content := container.NewVBox(
 		label,
-		widget.NewButton("Kontaktanfrage senden", func() {
+		widget.NewButton("Send Contact Request", func() {
 			sendContactRequestUI(window)
 		}),
-		widget.NewButton("Empfangene Kontaktanfragen anzeigen", func() {
+		widget.NewButton("View Received Contact Requests", func() {
 			viewReceivedRequestsUI(window)
 		}),
-		widget.NewButton("Chats anzeigen", func() {
+		widget.NewButton("View Chats", func() {
 			viewChatsUI(window)
 		}),
-		widget.NewButton("Kontaktnamen bearbeiten", func() {
+		widget.NewButton("Edit Contact Name", func() {
 			editContactNameUI(window)
 		}),
-		widget.NewButton("Beenden", func() {
+		widget.NewButton("Exit", func() {
 			window.Close()
 		}),
 	)

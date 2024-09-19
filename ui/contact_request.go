@@ -13,16 +13,16 @@ import (
 
 func sendContactRequestUI(window fyne.Window) {
 	ipEntry := widget.NewEntry()
-	ipEntry.SetPlaceHolder("IP-Adresse des Kontakts")
+	ipEntry.SetPlaceHolder("Contact's IP address")
 	portEntry := widget.NewEntry()
-	portEntry.SetPlaceHolder("Port des Kontakts")
+	portEntry.SetPlaceHolder("Contact's port")
 
 	formItems := []*widget.FormItem{
-		widget.NewFormItem("IP-Adresse", ipEntry),
+		widget.NewFormItem("IP Address", ipEntry),
 		widget.NewFormItem("Port", portEntry),
 	}
 
-	form := dialog.NewForm("Kontaktanfrage senden", "Senden", "Abbrechen", formItems, func(b bool) {
+	form := dialog.NewForm("Send Contact Request", "Send", "Cancel", formItems, func(b bool) {
 		if b {
 			ip := strings.TrimSpace(ipEntry.Text)
 			port := strings.TrimSpace(portEntry.Text)
@@ -36,7 +36,7 @@ func sendContactRequestUI(window fyne.Window) {
 			if err != nil {
 				dialog.ShowError(err, window)
 			} else {
-				dialog.ShowInformation("Erfolg", "Kontaktanfrage gesendet.", window)
+				dialog.ShowInformation("Success", "Contact request sent.", window)
 			}
 		}
 	}, window)

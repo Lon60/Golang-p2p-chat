@@ -16,7 +16,7 @@ var publicKey *rsa.PublicKey
 
 func ExportPublicKey() ([]byte, error) {
 	if publicKey == nil {
-		return nil, errors.New("Public Key nicht verfügbar")
+		return nil, errors.New("public key not available")
 	}
 
 	pubASN1, err := x509.MarshalPKIXPublicKey(publicKey)
@@ -32,41 +32,33 @@ func ExportPublicKey() ([]byte, error) {
 	return pubBytes, nil
 }
 
-// GenerateKeyPairIfNotExists prüft, ob das Schlüsselpaar existiert, und generiert es falls nicht.
 func GenerateKeyPairIfNotExists(bits int) error {
 	privateKeyPath := "private_key.pem"
 
-	// Prüfen, ob der private Schlüssel bereits existiert
 	if _, err := os.Stat(privateKeyPath); os.IsNotExist(err) {
-		// Falls nicht vorhanden, generiere ein neues Schlüsselpaar
 		return GenerateKeyPair(bits)
 	}
 
-	// Lade den vorhandenen Private Key, falls er existiert
 	_, err := LoadPrivateKey()
 	return err
 }
 
 func LoadPrivateKey() (*rsa.PrivateKey, error) {
-	// Überprüfe, ob die Datei existiert
 	privateKeyPath := "private_key.pem"
 	if _, err := os.Stat(privateKeyPath); os.IsNotExist(err) {
-		return nil, errors.New("Private Key Datei nicht gefunden")
+		return nil, errors.New("private key file not found")
 	}
 
-	// Lade die Private Key Datei
 	keyBytes, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// PEM-Dekodierung
 	block, _ := pem.Decode(keyBytes)
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return nil, errors.New("Fehler beim Dekodieren des Private Keys")
+		return nil, errors.New("error decoding private key")
 	}
 
-	// Parse den Private Key
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
@@ -82,9 +74,9 @@ func GenerateKeyPair(bits int) error {
 	}
 	publicKey = &privateKey.PublicKey
 
-	// Speichere den Private Key
 	return savePrivateKey("private_key.pem", privateKey)
 }
+
 func savePrivateKey(fileName string, key *rsa.PrivateKey) error {
 	keyBytes := x509.MarshalPKCS1PrivateKey(key)
 	keyPEM := pem.EncodeToMemory(&pem.Block{
@@ -99,10 +91,9 @@ func VerifySignature(message string, signature []byte, publicKey *rsa.PublicKey)
 	hash.Write([]byte(message))
 	digest := hash.Sum(nil)
 
-	// Verifiziere die Signatur
 	err := rsa.VerifyPSS(publicKey, crypto.SHA256, digest, signature, nil)
 	if err != nil {
-		return errors.New("Signatur konnte nicht verifiziert werden")
+		return errors.New("signature could not be verified")
 	}
 	return nil
 }
@@ -110,7 +101,7 @@ func VerifySignature(message string, signature []byte, publicKey *rsa.PublicKey)
 func ImportPublicKey(pemBytes []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil || block.Type != "PUBLIC KEY" {
-		return nil, errors.New("Fehler beim Dekodieren des Public Keys")
+		return nil, errors.New("error decoding public key")
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
@@ -122,6 +113,6 @@ func ImportPublicKey(pemBytes []byte) (*rsa.PublicKey, error) {
 	case *rsa.PublicKey:
 		return pub, nil
 	default:
-		return nil, errors.New("Public Key ist kein RSA-Schlüssel")
+		return nil, errors.New("public key is not an RSA key")
 	}
 }

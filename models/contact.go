@@ -6,8 +6,8 @@ type Contact struct {
 	Name      string         `json:"name"`
 	IP        string         `json:"ip"`
 	Port      string         `json:"port"`
-	PublicKey []byte         `json:"public_key"` // Public Key als []byte für Übertragung
-	KeyObject *rsa.PublicKey `json:"-"`          // Public Key als *rsa.PublicKey für Nutzung, nicht für JSON
+	PublicKey []byte         `json:"public_key"`
+	KeyObject *rsa.PublicKey `json:"-"`
 }
 
 func (c Contact) Identifier() string {
