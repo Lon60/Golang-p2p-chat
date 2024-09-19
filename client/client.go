@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -94,6 +95,7 @@ func SendChatMessage(contact models.Contact, message string) error {
 		messageQueue[contact.Identifier()] = append(messageQueue[contact.Identifier()], message)
 		return err
 	}
+
 	defer func() {
 		err := conn.Close()
 		if err != nil {
@@ -101,7 +103,7 @@ func SendChatMessage(contact models.Contact, message string) error {
 		}
 	}()
 
-	err = sendMessageOverConnection(conn, message)
+	err = sendMessageOverConnection(conn, message, contact.KeyObject)
 	if err != nil {
 		return fmt.Errorf("error sending chat message: %v", err)
 	}
@@ -130,15 +132,27 @@ func EncryptMessage(message string, recipientPublicKey *rsa.PublicKey) ([]byte, 
 	return encryptedMessage, nil
 }
 
-func sendMessageOverConnection(conn net.Conn, message string) error {
-	_, err := fmt.Fprintf(conn, config.LocalUserName+"\n")
+func sendMessageOverConnection(conn net.Conn, message string, recipientPublicKey *rsa.PublicKey) error {
+
+	_, err := fmt.Fprintf(conn, "CHAT_MESSAGE\n")
+	if err != nil {
+		return fmt.Errorf("error sending messagetype: %v", err)
+	}
+
+	_, err = fmt.Fprintf(conn, config.LocalUserName+"\n")
 	if err != nil {
 		return fmt.Errorf("error sending sender name: %v", err)
 	}
 
-	_, err = fmt.Fprintf(conn, message+"\n")
+	encryptedMessage, err := EncryptMessage(message, recipientPublicKey)
 	if err != nil {
-		return fmt.Errorf("error sending message: %v", err)
+		return fmt.Errorf("error encrypted message: %v", err)
+	}
+
+	encryptedMessageEncoded := base64.StdEncoding.EncodeToString(encryptedMessage)
+	_, err = fmt.Fprintf(conn, encryptedMessageEncoded+"\n")
+	if err != nil {
+		return fmt.Errorf("error sending encrypted message: %v", err)
 	}
 
 	signature, err := signMessage(message)
@@ -146,7 +160,8 @@ func sendMessageOverConnection(conn net.Conn, message string) error {
 		return fmt.Errorf("error signing message: %v", err)
 	}
 
-	_, err = conn.Write(signature)
+	signatureEncoded := base64.StdEncoding.EncodeToString(signature)
+	_, err = fmt.Fprintf(conn, signatureEncoded+"\n")
 	if err != nil {
 		return fmt.Errorf("error sending signature: %v", err)
 	}

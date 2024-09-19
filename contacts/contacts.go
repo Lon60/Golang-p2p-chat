@@ -60,3 +60,12 @@ func LoadContactsFromFile() {
 		fmt.Println("Error loading contacts:", err)
 	}
 }
+
+func GetContactByName(name string) (models.Contact, bool) {
+	for _, contact := range contacts {
+		if contact.Name == name {
+			return contact, true
+		}
+	}
+	return models.Contact{}, false
+}

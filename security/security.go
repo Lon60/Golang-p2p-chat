@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -64,6 +65,8 @@ func LoadPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
+	publicKey = &privateKey.PublicKey
+
 	return privateKey, nil
 }
 
@@ -115,4 +118,16 @@ func ImportPublicKey(pemBytes []byte) (*rsa.PublicKey, error) {
 	default:
 		return nil, errors.New("public key is not an RSA key")
 	}
+}
+
+func DecryptMessage(ciphertext []byte) (string, error) {
+	privateKey, err := LoadPrivateKey()
+	if err != nil {
+		return "", fmt.Errorf("error loading private-key: %v", err)
+	}
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, ciphertext, nil)
+	if err != nil {
+		return "", fmt.Errorf("error decrypting message: %v", err)
+	}
+	return string(plaintext), nil
 }

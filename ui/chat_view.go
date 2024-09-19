@@ -76,8 +76,10 @@ func startChatUI(window fyne.Window, contact models.Contact) {
 		for {
 			select {
 			case newMessage := <-config.MessageChannel:
-				chat_data.AppendToChatHistory(contact.Identifier(), newMessage)
-				messages.SetText(strings.Join(*chatHistory, "\n"))
+				if strings.HasPrefix(newMessage, contact.Name+": ") {
+					chat_data.AppendToChatHistory(contact.Identifier(), newMessage)
+					messages.SetText(strings.Join(*chatHistory, "\n"))
+				}
 			}
 		}
 	}()
