@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	err := security.GenerateKeyPairIfNotExists(2048) // 2048 Bits Schlüssellänge
+	err := security.GenerateKeyPairIfNotExists(2048)
 	if err != nil {
-		fmt.Println("Fehler beim Generieren des Schlüsselpaares:", err)
+		fmt.Println("Error generating key pair:", err)
 		return
 	}
 

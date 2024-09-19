@@ -37,12 +37,12 @@ func UpdateContactName(identifier, newName string) {
 func SaveContactsToFile() {
 	file, err := json.MarshalIndent(contacts, "", "  ")
 	if err != nil {
-		fmt.Println("Fehler beim Speichern der Kontakte:", err)
+		fmt.Println("Error saving contacts:", err)
 		return
 	}
 	err = ioutil.WriteFile(contactsFile, file, 0644)
 	if err != nil {
-		fmt.Println("Fehler beim Schreiben der Kontakte-Datei:", err)
+		fmt.Println("Error writing contacts file:", err)
 	}
 }
 
@@ -52,11 +52,20 @@ func LoadContactsFromFile() {
 	}
 	file, err := ioutil.ReadFile(contactsFile)
 	if err != nil {
-		fmt.Println("Fehler beim Lesen der Kontakte-Datei:", err)
+		fmt.Println("Error reading contacts file:", err)
 		return
 	}
 	err = json.Unmarshal(file, &contacts)
 	if err != nil {
-		fmt.Println("Fehler beim Laden der Kontakte:", err)
+		fmt.Println("Error loading contacts:", err)
 	}
+}
+
+func GetContactByName(name string) (models.Contact, bool) {
+	for _, contact := range contacts {
+		if contact.Name == name {
+			return contact, true
+		}
+	}
+	return models.Contact{}, false
 }

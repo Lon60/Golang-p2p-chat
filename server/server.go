@@ -1,12 +1,15 @@
 package server
 
 import (
+	"Golang-p2p-chat/chat_data"
+	"Golang-p2p-chat/config"
 	"Golang-p2p-chat/contact_requests"
 	"Golang-p2p-chat/contacts"
 	"Golang-p2p-chat/models"
 	"Golang-p2p-chat/security"
 	"bufio"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -18,111 +21,123 @@ import (
 var PORT = "6000"
 
 func StartServer() {
-	// Kommandozeilenargument für die IP-Adresse
-	ip := flag.String("ip", "0.0.0.0", "IP-Adresse, auf der der Server lauschen soll")
-	port := flag.Int("port", 6000, "Port, auf dem der Server lauschen soll")
+	ip := flag.String("ip", "0.0.0.0", "IP address to listen on")
+	port := flag.Int("port", 6000, "Port to listen on")
 
-	// Parsen der Kommandozeilenargumente
 	flag.Parse()
 
-	// Starte den Server auf der angegebenen IP-Adresse und dem Port
 	address := *ip + ":" + strconv.Itoa(*port)
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
-		fmt.Printf("Fehler beim Starten auf %s\n", address)
+		fmt.Printf("Error starting on %s\n", address)
 		return
 	}
 	defer ln.Close()
 
-	fmt.Printf("Lausche auf %s\n", address)
+	fmt.Printf("Listening on %s\n", address)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Println("Fehler beim Akzeptieren der Verbindung:", err)
+			fmt.Println("Error accepting connection:", err)
 			continue
 		}
 		go handleConnection(conn)
 	}
 }
 
-func handleContactRequest(conn net.Conn, reader *bufio.Reader) {
+func handleContactRequest(reader *bufio.Reader) {
 	requestJSON, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Fehler beim Lesen der Kontaktanfrage:", err)
+		fmt.Println("Error reading contact request:", err)
 		return
 	}
 
 	var request models.ContactRequest
 	err = json.Unmarshal([]byte(strings.TrimSpace(requestJSON)), &request)
 	if err != nil {
-		fmt.Println("Fehler beim Verarbeiten der Kontaktanfrage:", err)
+		fmt.Println("Error processing contact request:", err)
 		return
 	}
 
-	fmt.Printf("Kontaktanfrage von %s (%s:%s) erhalten.\n", request.Name, request.IP, request.Port)
+	fmt.Printf("Contact request received from %s (%s:%s).\n", request.Name, request.IP, request.Port)
 	contact_requests.AddReceivedRequest(request)
 }
-func handleContactAccepted(conn net.Conn, reader *bufio.Reader) {
+
+func handleContactAccepted(reader *bufio.Reader) {
 	contactJSON, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Fehler beim Lesen der Kontaktakzeptierung:", err)
+		fmt.Println("Error reading contact acceptance:", err)
 		return
 	}
 
 	var contact models.Contact
 	err = json.Unmarshal([]byte(strings.TrimSpace(contactJSON)), &contact)
 	if err != nil {
-		fmt.Println("Fehler beim Verarbeiten der Kontaktakzeptierung:", err)
+		fmt.Println("Error processing contact acceptance:", err)
 		return
 	}
 
 	contactKeyObject, err := security.ImportPublicKey(contact.PublicKey)
 	if err != nil {
-		fmt.Println("Fehler beim Importieren des Public Keys:", err)
+		fmt.Println("Error importing public key:", err)
 		return
 	}
 	contact.KeyObject = contactKeyObject
 
-	fmt.Printf("Kontaktanfrage von %s (%s:%s) wurde akzeptiert.\n", contact.Name, contact.IP, contact.Port)
+	fmt.Printf("Contact request from %s (%s:%s) was accepted.\n", contact.Name, contact.IP, contact.Port)
 
-	// Kontakt hinzufügen
 	identifier := contact.IP + ":" + contact.Port
 	contacts.AddContact(identifier, contact)
-	fmt.Println("Kontakt hinzugefügt.")
+	fmt.Println("Contact added.")
 }
 
-func handleChatMessage(conn net.Conn, reader *bufio.Reader, senderPublicKey *rsa.PublicKey) {
-	// Empfange den Absendernamen
+func handleChatMessage(reader *bufio.Reader, senderPublicKey *rsa.PublicKey, senderName string) {
 	senderName, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Fehler beim Lesen des Sendernamens:", err)
+		fmt.Println("Error reading sender name:", err)
 		return
 	}
 	senderName = strings.TrimSpace(senderName)
 
-	// Empfange Nachricht und Signatur
-	message, err := reader.ReadString('\n')
+	encryptedMessageEncoded, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Fehler beim Lesen der Nachricht:", err)
-		return
-	}
-	message = strings.TrimSpace(message)
-
-	signature, err := reader.ReadBytes('\n')
-	if err != nil {
-		fmt.Println("Fehler beim Lesen der Signatur:", err)
+		fmt.Println("error reading message:", err)
 		return
 	}
 
-	// Verifiziere die Signatur mit dem Public Key
+	encryptedMessage, err := base64.StdEncoding.DecodeString(strings.TrimSpace(encryptedMessageEncoded))
+	if err != nil {
+		fmt.Println("error decode message:", err)
+		return
+	}
+
+	message, err := security.DecryptMessage(encryptedMessage)
+	if err != nil {
+		fmt.Println("error decrypting message:", err)
+		return
+	}
+
+	signatureEncoded, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("error reading signature:", err)
+		return
+	}
+
+	signature, err := base64.StdEncoding.DecodeString(strings.TrimSpace(signatureEncoded))
+	if err != nil {
+		fmt.Println("error decoding signature:", err)
+		return
+	}
+
 	err = security.VerifySignature(message, signature, senderPublicKey)
 	if err != nil {
-		fmt.Println("Signatur ungültig:", err)
+		fmt.Println("Invalid signature:", err)
 		return
 	}
 
-	// Nachricht verarbeiten
-	fmt.Printf("Nachricht von %s: %s\n", senderName, message)
+	fmt.Printf("Message from %s: %s\n", senderName, message)
+	chat_data.AppendToChatHistory(senderName, senderName+": "+message)
+	config.MessageChannel <- senderName + ": " + message
 }
 
 func handleConnection(conn net.Conn) {
@@ -130,27 +145,31 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	messageType, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Fehler beim Lesen des Nachrichtentyps:", err)
+		fmt.Println("Error reading message type:", err)
 		return
 	}
 	messageType = strings.TrimSpace(messageType)
 
 	if messageType == "CONTACT_REQUEST" {
-		handleContactRequest(conn, reader)
+		handleContactRequest(reader)
 	} else if messageType == "CONTACT_ACCEPTED" {
-		handleContactAccepted(conn, reader)
+		handleContactAccepted(reader)
 	} else if messageType == "CHAT_MESSAGE" {
-		// Hier wird angenommen, dass der Absender in den Kontakten gespeichert ist und den Public Key hat
-		senderIP, _ := conn.RemoteAddr().(*net.TCPAddr)
-		senderContact, exists := contacts.GetContact(senderIP.IP.String() + ":" + strconv.Itoa(senderIP.Port))
+		senderName, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading sender name:", err)
+			return
+		}
+		senderName = strings.TrimSpace(senderName)
+
+		senderContact, exists := contacts.GetContactByName(senderName)
 		if !exists {
-			fmt.Println("Kein Kontakt gefunden, der zu dieser IP passt.")
+			fmt.Println("No contact found matching this name.")
 			return
 		}
 
-		// Public Key des Absenders verwenden
-		handleChatMessage(conn, reader, senderContact.KeyObject) // Nutze das KeyObject (rsa.PublicKey)
+		handleChatMessage(reader, senderContact.KeyObject, senderName)
 	} else {
-		fmt.Println("Unbekannter Nachrichtentyp:", messageType)
+		fmt.Println("Unknown message type:", messageType)
 	}
 }

@@ -16,21 +16,20 @@ func viewReceivedRequestsUI(window fyne.Window) {
 	requests := contact_requests.GetReceivedRequests()
 
 	if len(requests) == 0 {
-		dialog.ShowInformation("Keine Kontaktanfragen", "Es liegen keine empfangenen Kontaktanfragen vor.", window)
+		dialog.ShowInformation("No Contact Requests", "No received contact requests.", window)
 		return
 	}
 
 	var items []fyne.CanvasObject
 	for _, req := range requests {
-		reqCopy := req // Kopiere die Schleifenvariable
+		reqCopy := req
 		item := widget.NewButton(fmt.Sprintf("%s (%s:%s)", req.Name, req.IP, req.Port), func() {
 			acceptContactRequest(reqCopy, window)
 		})
 		items = append(items, item)
 	}
 
-	// "Zurück"-Button hinzufügen
-	backButton := widget.NewButton("Zurück", func() {
+	backButton := widget.NewButton("Back", func() {
 		showMainMenu(window)
 	})
 
@@ -48,15 +47,13 @@ func acceptContactRequest(request models.ContactRequest, window fyne.Window) {
 		Port: request.Port,
 	}
 
-	// Füge Kontakt hinzu und entferne Anfrage
 	contacts.AddContact(identifier, contact)
 
-	// Benachrichtige den anfragenden Kontakt
 	err := client.SendContactAccepted(request)
 	if err != nil {
 		dialog.ShowError(err, window)
 	} else {
 		contact_requests.RemoveReceivedRequestByIdentifier(identifier)
-		dialog.ShowInformation("Kontakt akzeptiert", "Der Kontakt wurde akzeptiert.", window)
+		dialog.ShowInformation("Contact Accepted", "The contact has been accepted.", window)
 	}
 }
