@@ -59,6 +59,13 @@ func handleContactRequest(reader *bufio.Reader) {
 		return
 	}
 
+	contactKeyObject, err := security.ImportPublicKey(request.PublicKey)
+	if err != nil {
+		fmt.Println("Error importing public key:", err)
+		return
+	}
+	request.KeyObject = contactKeyObject
+
 	fmt.Printf("Contact request received from %s (%s:%s).\n", request.Name, request.IP, request.Port)
 	contact_requests.AddReceivedRequest(request)
 }

@@ -2,6 +2,7 @@ package contacts
 
 import (
 	"Golang-p2p-chat/models"
+	"Golang-p2p-chat/security"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -58,6 +59,18 @@ func LoadContactsFromFile() {
 	err = json.Unmarshal(file, &contacts)
 	if err != nil {
 		fmt.Println("Error loading contacts:", err)
+	}
+
+	for identifier, contact := range contacts {
+		if contact.PublicKey != nil {
+			keyObject, err := security.ImportPublicKey(contact.PublicKey)
+			if err != nil {
+				fmt.Printf("Error importing public key for contact %s: %v\n", identifier, err)
+			} else {
+				contact.KeyObject = keyObject
+				contacts[identifier] = contact
+			}
+		}
 	}
 }
 

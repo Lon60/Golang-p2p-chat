@@ -42,9 +42,11 @@ func viewReceivedRequestsUI(window fyne.Window) {
 func acceptContactRequest(request models.ContactRequest, window fyne.Window) {
 	identifier := request.IP + ":" + request.Port
 	contact := models.Contact{
-		Name: identifier,
-		IP:   request.IP,
-		Port: request.Port,
+		Name:      request.Name,
+		IP:        request.IP,
+		Port:      request.Port,
+		PublicKey: request.PublicKey,
+		KeyObject: request.KeyObject,
 	}
 
 	contacts.AddContact(identifier, contact)

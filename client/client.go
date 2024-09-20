@@ -18,6 +18,17 @@ import (
 var messageQueue = make(map[string][]string)
 
 func SendContactRequest(ip, port string, request models.ContactRequest) error {
+	publicKeyBytes, err := security.ExportPublicKey()
+	if err != nil {
+		return fmt.Errorf("error exporting public key: %v", err)
+	}
+	request.PublicKey = publicKeyBytes
+
+	requestJSON, err := json.Marshal(request)
+	if err != nil {
+		return fmt.Errorf("error marshaling contact request: %v", err)
+	}
+
 	conn, err := net.Dial("tcp", ip+":"+port)
 	if err != nil {
 		return err
@@ -32,11 +43,6 @@ func SendContactRequest(ip, port string, request models.ContactRequest) error {
 	_, err = fmt.Fprintf(conn, "CONTACT_REQUEST\n")
 	if err != nil {
 		return fmt.Errorf("error sending contact request type: %v", err)
-	}
-
-	requestJSON, err := json.Marshal(request)
-	if err != nil {
-		return fmt.Errorf("error marshaling contact request: %v", err)
 	}
 
 	_, err = fmt.Fprintf(conn, string(requestJSON)+"\n")
